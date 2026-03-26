@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="primary">#FF6B57</color>
+    <color name="primary_dark">#D94834</color>
+    <color name="secondary">#0EAD98</color>
+    <color name="accent">#F8B84E</color>
+    <color name="surface">#FFF7F3</color>
+    <color name="surface_elevated">#FFFFFFFF</color>
+    <color name="surface_dark">#161B2D</color>
+    <color name="text_primary">#1C2033</color>
+    <color name="text_secondary">#5F677D</color>
+    <color name="text_inverse">#FFF9F6</color>
+    <color name="outline">#E7D7D0</color>
+    <color name="success">#19A774</color>
+    <color name="warning">#E68A1E</color>
+    <color name="error_red">#C44036</color>
+    <color name="chip_background">#FFF0EA</color>
+    <color name="chat_incoming">#FFEAE3</color>
+    <color name="chat_outgoing">#1C2033</color>
+    <color name="nav_unselected">#8A90A3</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>

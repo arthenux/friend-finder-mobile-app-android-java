@@ -1,9 +1,55 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.FriendFinderMobileApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/chip_background</item>
+        <item name="colorOnPrimaryContainer">@color/text_primary</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/surface_elevated</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOutline">@color/outline</item>
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="materialCardViewStyle">@style/Widget.FriendFinder.Card</item>
+        <item name="materialButtonStyle">@style/Widget.FriendFinder.Button</item>
+        <item name="textInputStyle">@style/Widget.FriendFinder.TextInputLayout</item>
+        <item name="editTextStyle">@style/Widget.FriendFinder.TextInputEditText</item>
     </style>
 
     <style name="Theme.FriendFinderMobileApp" parent="Base.Theme.FriendFinderMobileApp" />
+
+    <style name="Widget.FriendFinder.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">28dp</item>
+        <item name="cardBackgroundColor">@color/surface_elevated</item>
+    </style>
+
+    <style name="Widget.FriendFinder.Button" parent="Widget.Material3.Button">
+        <item name="cornerRadius">18dp</item>
+    </style>
+
+    <style name="Widget.FriendFinder.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/surface_elevated</item>
+        <item name="hintTextColor">@color/text_secondary</item>
+        <item name="boxStrokeColor">@color/outline</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+    </style>
+
+    <style name="Widget.FriendFinder.TextInputEditText" parent="Widget.Material3.TextInputEditText.OutlinedBox">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textColorHint">@color/text_secondary</item>
+    </style>
+
+    <style name="TextAppearance.FriendFinder.ToolbarTitle" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.FriendFinder.ToolbarSubtitle" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
 </resources>

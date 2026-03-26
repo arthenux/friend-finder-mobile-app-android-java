@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="match_count_subtitle">
+        <item quantity="one">%d active match</item>
+        <item quantity="other">%d active matches</item>
+    </plurals>
+</resources>
