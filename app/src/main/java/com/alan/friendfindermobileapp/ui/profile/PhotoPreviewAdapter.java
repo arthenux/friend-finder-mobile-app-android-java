@@ -1,6 +1,5 @@
 package com.alan.friendfindermobileapp.ui.profile;
 
-import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -8,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.alan.friendfindermobileapp.databinding.ItemProfilePhotoBinding;
+import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +41,10 @@ public class PhotoPreviewAdapter extends RecyclerView.Adapter<PhotoPreviewAdapte
     @Override
     public void onBindViewHolder(@NonNull PhotoViewHolder holder, int position) {
         String photoUri = photoUris.get(position);
-        holder.binding.photoView.setImageURI(Uri.parse(photoUri));
+        Glide.with(holder.binding.photoView)
+                .load(photoUri)
+                .centerCrop()
+                .into(holder.binding.photoView);
         holder.binding.removeButton.setOnClickListener(view -> listener.onRemoveClicked(photoUri));
     }
 

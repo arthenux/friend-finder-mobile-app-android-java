@@ -19,18 +19,21 @@ import com.alan.friendfindermobileapp.model.DiscoveryProfile;
 import com.alan.friendfindermobileapp.model.MatchThread;
 import com.alan.friendfindermobileapp.ui.chat.MessageAdapter;
 
+import java.util.Collections;
+
 public class ChatActivity extends AppCompatActivity implements FriendFinderRepository.RepositoryListener {
 
-    private static final String EXTRA_PROFILE_ID = "extra_profile_id";
+    private static final String EXTRA_MATCH_ID = "extra_match_id";
 
     private ActivityChatBinding binding;
     private FriendFinderRepository repository;
     private MessageAdapter adapter;
-    private String profileId;
+    private String matchId;
+    private FriendFinderRepository.Subscription messagesRegistration;
 
-    public static Intent createIntent(Context context, String profileId) {
+    public static Intent createIntent(Context context, String matchId) {
         Intent intent = new Intent(context, ChatActivity.class);
-        intent.putExtra(EXTRA_PROFILE_ID, profileId);
+        intent.putExtra(EXTRA_MATCH_ID, matchId);
         return intent;
     }
 
@@ -43,8 +46,8 @@ public class ChatActivity extends AppCompatActivity implements FriendFinderRepos
         setContentView(binding.getRoot());
 
         repository = FriendFinderRepository.getInstance(this);
-        profileId = getIntent().getStringExtra(EXTRA_PROFILE_ID);
-        if (profileId == null) {
+        matchId = getIntent().getStringExtra(EXTRA_MATCH_ID);
+        if (matchId == null) {
             finish();
             return;
         }
@@ -60,11 +63,34 @@ public class ChatActivity extends AppCompatActivity implements FriendFinderRepos
     protected void onStart() {
         super.onStart();
         repository.registerListener(this);
+        messagesRegistration = repository.listenToMessages(matchId, new FriendFinderRepository.MessagesListener() {
+            @Override
+            public void onMessagesChanged(java.util.List<com.alan.friendfindermobileapp.model.ChatMessage> messages) {
+                adapter.submitList(messages);
+                boolean hasMessages = !messages.isEmpty();
+                binding.emptyContainer.setVisibility(hasMessages ? View.GONE : View.VISIBLE);
+                binding.messageList.setVisibility(hasMessages ? View.VISIBLE : View.GONE);
+                if (hasMessages) {
+                    binding.messageList.post(() -> binding.messageList.scrollToPosition(adapter.getItemCount() - 1));
+                }
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                binding.emptyContainer.setVisibility(View.VISIBLE);
+                binding.messageList.setVisibility(View.GONE);
+            }
+        });
+        renderConversation();
     }
 
     @Override
     protected void onStop() {
         repository.unregisterListener(this);
+        if (messagesRegistration != null) {
+            messagesRegistration.cancel();
+            messagesRegistration = null;
+        }
         super.onStop();
     }
 
@@ -99,9 +125,7 @@ public class ChatActivity extends AppCompatActivity implements FriendFinderRepos
 
     private void setupMessages() {
         adapter = new MessageAdapter();
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        layoutManager.setStackFromEnd(false);
-        binding.messageList.setLayoutManager(layoutManager);
+        binding.messageList.setLayoutManager(new LinearLayoutManager(this));
         binding.messageList.setAdapter(adapter);
     }
 
@@ -114,28 +138,31 @@ public class ChatActivity extends AppCompatActivity implements FriendFinderRepos
                 return;
             }
 
-            repository.sendMessage(profileId, message);
+            repository.sendMessage(matchId, message);
             binding.messageInput.setText("");
         });
     }
 
     private void renderConversation() {
-        MatchThread match = repository.findMatch(profileId);
-        DiscoveryProfile profile = repository.getProfile(profileId);
-        if (match == null || profile == null) {
+        MatchThread match = repository.findMatchById(matchId);
+        if (match == null) {
             finish();
             return;
         }
 
-        binding.chatToolbar.setTitle(profile.getName());
-        binding.chatToolbar.setSubtitle(profile.getCity() + " - " + profile.getJobTitle());
-        adapter.submitList(match.getMessages());
+        DiscoveryProfile profile = repository.getProfile(match.getProfileId());
+        if (profile != null) {
+            binding.chatToolbar.setTitle(profile.getName());
+            binding.chatToolbar.setSubtitle(profile.getCity() + " - " + profile.getJobTitle());
+        } else {
+            binding.chatToolbar.setTitle(getString(R.string.chat_title_fallback));
+            binding.chatToolbar.setSubtitle("");
+        }
 
-        boolean hasMessages = !match.getMessages().isEmpty();
-        binding.emptyContainer.setVisibility(hasMessages ? View.GONE : View.VISIBLE);
-        binding.messageList.setVisibility(hasMessages ? View.VISIBLE : View.GONE);
-        if (hasMessages) {
-            binding.messageList.post(() -> binding.messageList.scrollToPosition(adapter.getItemCount() - 1));
+        if (match.getMessages().isEmpty()) {
+            adapter.submitList(Collections.emptyList());
+            binding.emptyContainer.setVisibility(View.VISIBLE);
+            binding.messageList.setVisibility(View.GONE);
         }
     }
 }

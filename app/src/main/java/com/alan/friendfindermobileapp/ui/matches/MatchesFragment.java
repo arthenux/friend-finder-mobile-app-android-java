@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.alan.friendfindermobileapp.ChatActivity;
+import com.alan.friendfindermobileapp.R;
 import com.alan.friendfindermobileapp.data.FriendFinderRepository;
 import com.alan.friendfindermobileapp.databinding.FragmentMatchesBinding;
 import com.alan.friendfindermobileapp.model.MatchThread;
@@ -37,7 +38,7 @@ public class MatchesFragment extends Fragment implements FriendFinderRepository.
         repository = FriendFinderRepository.getInstance(requireContext());
 
         adapter = new MatchAdapter(repository, matchThread -> startActivity(
-                ChatActivity.createIntent(requireContext(), matchThread.getProfileId())
+                ChatActivity.createIntent(requireContext(), matchThread.getId())
         ));
         binding.matchesRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.matchesRecycler.setAdapter(adapter);
@@ -71,12 +72,30 @@ public class MatchesFragment extends Fragment implements FriendFinderRepository.
     }
 
     private void renderState() {
+        if (!repository.isBackendConfigured()) {
+            showEmptyState(
+                    getString(R.string.backend_setup_title),
+                    getString(R.string.backend_setup_matches_body),
+                    "Add your Supabase URL and anon key in the app resources first."
+            );
+            return;
+        }
+
+        if (!repository.isAuthenticated()) {
+            showEmptyState(
+                    getString(R.string.matches_auth_title),
+                    getString(R.string.matches_auth_body),
+                    "Sign in from the Profile tab to start receiving live matches."
+            );
+            return;
+        }
+
         if (!repository.hasCurrentUser()) {
-            binding.matchesSummary.setText("Create a profile to unlock your matches.");
-            binding.emptyTitle.setText(com.alan.friendfindermobileapp.R.string.matches_locked_title);
-            binding.emptyBody.setText(com.alan.friendfindermobileapp.R.string.matches_locked_body);
-            binding.emptyContainer.setVisibility(View.VISIBLE);
-            binding.matchesRecycler.setVisibility(View.GONE);
+            showEmptyState(
+                    getString(R.string.matches_profile_title),
+                    getString(R.string.matches_profile_body),
+                    "Finish your profile first so other people can discover you."
+            );
             return;
         }
 
@@ -84,14 +103,22 @@ public class MatchesFragment extends Fragment implements FriendFinderRepository.
         adapter.submitList(matches);
         binding.matchesSummary.setText(
                 matches.isEmpty()
-                        ? "Your next match will show up here."
-                        : matches.size() + (matches.size() == 1 ? " person liked you back." : " people liked you back.")
+                        ? "Your real-time matches will appear here."
+                        : matches.size() + (matches.size() == 1 ? " live match right now." : " live matches right now.")
         );
 
         boolean isEmpty = matches.isEmpty();
-        binding.emptyTitle.setText(com.alan.friendfindermobileapp.R.string.matches_empty_title);
-        binding.emptyBody.setText(com.alan.friendfindermobileapp.R.string.matches_empty_body);
+        binding.emptyTitle.setText(R.string.matches_empty_title);
+        binding.emptyBody.setText(R.string.matches_empty_body);
         binding.emptyContainer.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         binding.matchesRecycler.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+    }
+
+    private void showEmptyState(String title, String body, String summary) {
+        binding.matchesSummary.setText(summary);
+        binding.emptyTitle.setText(title);
+        binding.emptyBody.setText(body);
+        binding.emptyContainer.setVisibility(View.VISIBLE);
+        binding.matchesRecycler.setVisibility(View.GONE);
     }
 }

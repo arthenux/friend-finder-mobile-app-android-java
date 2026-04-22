@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+PRIVATE_PRESENTATION_NOTES.md
+app/src/debug/res/values/supabase_config.xml
+app/src/release/res/values/supabase_config.xml

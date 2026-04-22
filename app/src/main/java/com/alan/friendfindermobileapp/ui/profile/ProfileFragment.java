@@ -34,6 +34,7 @@ public class ProfileFragment extends Fragment implements FriendFinderRepository.
     private ActivityResultLauncher<String[]> photoPickerLauncher;
     private final List<String> selectedPhotoUris = new ArrayList<>();
     private boolean hasBoundInitialData;
+    private boolean isBusy;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -89,8 +90,11 @@ public class ProfileFragment extends Fragment implements FriendFinderRepository.
 
         binding.addPhotosButton.setOnClickListener(button -> photoPickerLauncher.launch(new String[]{"image/*"}));
         binding.saveProfileButton.setOnClickListener(button -> saveProfile());
+        binding.signInButton.setOnClickListener(button -> authenticate(false));
+        binding.createAccountButton.setOnClickListener(button -> authenticate(true));
+        binding.signOutButton.setOnClickListener(button -> repository.signOut());
 
-        bindFromRepository();
+        renderState();
     }
 
     @Override
@@ -114,26 +118,45 @@ public class ProfileFragment extends Fragment implements FriendFinderRepository.
     @Override
     public void onDataChanged() {
         if (binding != null) {
-            bindFromRepository();
+            renderState();
         }
     }
 
-    private void bindFromRepository() {
-        LocalUser currentUser = repository.getCurrentUser();
+    private void renderState() {
+        if (!repository.isBackendConfigured()) {
+            binding.backendNoticeCard.setVisibility(View.VISIBLE);
+            binding.authContainer.setVisibility(View.GONE);
+            binding.signedInContainer.setVisibility(View.GONE);
+            binding.profileFormContainer.setVisibility(View.GONE);
+            binding.profileStateTitle.setText(R.string.backend_setup_title);
+            binding.profileStateBody.setText(R.string.backend_setup_profile_body);
+            binding.backendNoticeBody.setText(R.string.backend_setup_instruction_body);
+            return;
+        }
 
+        binding.backendNoticeCard.setVisibility(View.GONE);
+
+        if (!repository.isAuthenticated()) {
+            binding.authContainer.setVisibility(View.VISIBLE);
+            binding.signedInContainer.setVisibility(View.GONE);
+            binding.profileFormContainer.setVisibility(View.GONE);
+            binding.profileStateTitle.setText(R.string.profile_auth_title);
+            binding.profileStateBody.setText(R.string.profile_auth_body);
+            return;
+        }
+
+        binding.authContainer.setVisibility(View.GONE);
+        binding.signedInContainer.setVisibility(View.VISIBLE);
+        binding.profileFormContainer.setVisibility(View.VISIBLE);
+        binding.signedInEmail.setText(repository.getCurrentUserEmail());
+
+        LocalUser currentUser = repository.getCurrentUser();
         if (currentUser == null) {
             binding.profileStateTitle.setText(R.string.profile_header_new);
             binding.profileStateBody.setText(R.string.profile_status_new);
 
             if (!hasBoundInitialData) {
-                binding.nameInput.setText("");
-                binding.ageInput.setText("");
-                binding.cityInput.setText("");
-                binding.jobInput.setText("");
-                binding.headlineInput.setText("");
-                binding.aboutInput.setText("");
-                binding.interestsInput.setText("");
-                selectedPhotoUris.clear();
+                clearForm();
             }
         } else {
             binding.profileStateTitle.setText(R.string.profile_header_existing);
@@ -154,6 +177,18 @@ public class ProfileFragment extends Fragment implements FriendFinderRepository.
         hasBoundInitialData = true;
         renderPhotoState();
         clearErrors();
+        setBusy(false);
+    }
+
+    private void clearForm() {
+        binding.nameInput.setText("");
+        binding.ageInput.setText("");
+        binding.cityInput.setText("");
+        binding.jobInput.setText("");
+        binding.headlineInput.setText("");
+        binding.aboutInput.setText("");
+        binding.interestsInput.setText("");
+        selectedPhotoUris.clear();
     }
 
     private void renderPhotoState() {
@@ -168,11 +203,54 @@ public class ProfileFragment extends Fragment implements FriendFinderRepository.
     }
 
     private void clearErrors() {
+        binding.authEmailLayout.setError(null);
+        binding.authPasswordLayout.setError(null);
         binding.nameLayout.setError(null);
         binding.ageLayout.setError(null);
         binding.cityLayout.setError(null);
         binding.headlineLayout.setError(null);
         binding.aboutLayout.setError(null);
+    }
+
+    private void authenticate(boolean createAccount) {
+        clearErrors();
+
+        String email = valueOf(binding.authEmailInput);
+        String password = valueOf(binding.authPasswordInput);
+
+        if (TextUtils.isEmpty(email)) {
+            binding.authEmailLayout.setError(getString(R.string.auth_email_required));
+            return;
+        }
+
+        if (password.length() < 6) {
+            binding.authPasswordLayout.setError(getString(R.string.auth_password_required));
+            return;
+        }
+
+        setBusy(true);
+        FriendFinderRepository.SimpleCallback callback = errorMessage -> {
+            if (binding == null) {
+                return;
+            }
+            setBusy(false);
+            if (errorMessage != null) {
+                Snackbar.make(binding.getRoot(), errorMessage, Snackbar.LENGTH_LONG).show();
+                return;
+            }
+            binding.authPasswordInput.setText("");
+            Snackbar.make(
+                    binding.getRoot(),
+                    createAccount ? R.string.auth_account_created : R.string.auth_signed_in,
+                    Snackbar.LENGTH_LONG
+            ).show();
+        };
+
+        if (createAccount) {
+            repository.register(email, password, callback);
+        } else {
+            repository.signIn(email, password, callback);
+        }
     }
 
     private void saveProfile() {
@@ -226,7 +304,7 @@ public class ProfileFragment extends Fragment implements FriendFinderRepository.
 
         LocalUser existingUser = repository.getCurrentUser();
         LocalUser savedUser = new LocalUser(
-                existingUser != null ? existingUser.getId() : "friend-finder-self",
+                existingUser != null ? existingUser.getId() : "firebase-user",
                 name,
                 age,
                 city,
@@ -237,17 +315,36 @@ public class ProfileFragment extends Fragment implements FriendFinderRepository.
                 new ArrayList<>(selectedPhotoUris)
         );
 
-        repository.saveCurrentUser(savedUser);
+        setBusy(true);
+        repository.saveCurrentUser(savedUser, errorMessage -> {
+            if (binding == null) {
+                return;
+            }
+            setBusy(false);
+            if (errorMessage != null) {
+                Snackbar.make(binding.getRoot(), errorMessage, Snackbar.LENGTH_LONG).show();
+                return;
+            }
 
-        Snackbar.make(
-                binding.getRoot(),
-                existingUser == null ? R.string.profile_saved_message : R.string.profile_saved_and_ready_message,
-                Snackbar.LENGTH_LONG
-        ).show();
+            Snackbar.make(
+                    binding.getRoot(),
+                    existingUser == null ? R.string.profile_saved_message : R.string.profile_saved_and_ready_message,
+                    Snackbar.LENGTH_LONG
+            ).show();
 
-        if (existingUser == null && requireActivity() instanceof MainActivity) {
-            ((MainActivity) requireActivity()).navigateToDiscover();
-        }
+            if (requireActivity() instanceof MainActivity) {
+                ((MainActivity) requireActivity()).navigateToDiscover();
+            }
+        });
+    }
+
+    private void setBusy(boolean busy) {
+        isBusy = busy;
+        binding.signInButton.setEnabled(!busy);
+        binding.createAccountButton.setEnabled(!busy);
+        binding.saveProfileButton.setEnabled(!busy);
+        binding.signOutButton.setEnabled(!busy);
+        binding.addPhotosButton.setEnabled(!busy);
     }
 
     private void setTextIfChanged(com.google.android.material.textfield.TextInputEditText input, String newValue) {

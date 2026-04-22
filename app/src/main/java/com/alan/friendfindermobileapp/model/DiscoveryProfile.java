@@ -17,7 +17,7 @@ public class DiscoveryProfile {
     private final String initials;
     private final int primaryColor;
     private final int secondaryColor;
-    private final boolean matchOnLike;
+    private final String primaryPhotoUrl;
     private final List<String> interests;
 
     public DiscoveryProfile(
@@ -32,7 +32,7 @@ public class DiscoveryProfile {
             String initials,
             int primaryColor,
             int secondaryColor,
-            boolean matchOnLike,
+            String primaryPhotoUrl,
             List<String> interests
     ) {
         this.id = id;
@@ -46,7 +46,7 @@ public class DiscoveryProfile {
         this.initials = initials;
         this.primaryColor = primaryColor;
         this.secondaryColor = secondaryColor;
-        this.matchOnLike = matchOnLike;
+        this.primaryPhotoUrl = primaryPhotoUrl;
         this.interests = Collections.unmodifiableList(new ArrayList<>(interests));
     }
 
@@ -94,8 +94,8 @@ public class DiscoveryProfile {
         return secondaryColor;
     }
 
-    public boolean isMatchOnLike() {
-        return matchOnLike;
+    public String getPrimaryPhotoUrl() {
+        return primaryPhotoUrl;
     }
 
     public List<String> getInterests() {

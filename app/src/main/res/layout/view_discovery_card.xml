@@ -19,6 +19,18 @@
             android:layout_weight="1"
             android:minHeight="260dp">
 
+            <ImageView
+                android:id="@+id/hero_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/discover_photo_content_description"
+                android:scaleType="centerCrop" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#33000000" />
+
             <TextView
                 android:id="@+id/action_badge"
                 android:layout_width="wrap_content"
@@ -39,6 +51,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:background="#22000000"
+                android:padding="12dp"
                 android:textColor="@color/white"
                 android:textSize="72sp"
                 android:textStyle="bold" />

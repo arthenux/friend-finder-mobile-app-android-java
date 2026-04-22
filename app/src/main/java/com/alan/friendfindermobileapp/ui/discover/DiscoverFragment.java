@@ -1,5 +1,6 @@
 package com.alan.friendfindermobileapp.ui.discover;
 
+import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -19,7 +20,9 @@ import com.alan.friendfindermobileapp.databinding.FragmentDiscoverBinding;
 import com.alan.friendfindermobileapp.databinding.ViewDiscoveryCardBinding;
 import com.alan.friendfindermobileapp.model.DiscoveryProfile;
 import com.alan.friendfindermobileapp.model.MatchThread;
+import com.bumptech.glide.Glide;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 
 public class DiscoverFragment extends Fragment implements FriendFinderRepository.RepositoryListener {
 
@@ -107,22 +110,37 @@ public class DiscoverFragment extends Fragment implements FriendFinderRepository
     };
 
     private void renderDeck() {
+        if (!repository.isBackendConfigured()) {
+            showLockedState(
+                    "Supabase setup required",
+                    getString(R.string.backend_setup_discover_body),
+                    "Connect your Supabase project values to load live profiles."
+            );
+            return;
+        }
+
+        if (!repository.isAuthenticated()) {
+            showLockedState(
+                    "Sign in to start swiping",
+                    getString(R.string.discover_auth_body),
+                    "Create an account from the Profile tab to unlock the live discovery feed."
+            );
+            return;
+        }
+
         if (!repository.hasCurrentUser()) {
-            currentProfile = null;
-            binding.deckSummary.setText("Create your account to unlock discovery.");
-            binding.emptyTitle.setText(R.string.discover_locked_title);
-            binding.emptyBody.setText(R.string.discover_locked_body);
-            binding.emptyContainer.setVisibility(View.VISIBLE);
-            binding.currentCard.getRoot().setVisibility(View.GONE);
-            binding.nextCard.getRoot().setVisibility(View.GONE);
-            binding.actionRow.setVisibility(View.GONE);
+            showLockedState(
+                    "Finish your profile first",
+                    getString(R.string.discover_profile_body),
+                    "Add your details and photos before you appear in the live deck."
+            );
             return;
         }
 
         currentProfile = repository.getCurrentDiscoveryProfile();
         DiscoveryProfile nextProfile = repository.getNextDiscoveryProfile();
         int queueSize = repository.getDiscoveryQueue().size();
-        binding.deckSummary.setText(queueSize + " profiles waiting nearby.");
+        binding.deckSummary.setText(queueSize + " live profiles waiting nearby.");
 
         if (currentProfile == null) {
             binding.emptyTitle.setText(R.string.discover_empty_title);
@@ -164,7 +182,19 @@ public class DiscoverFragment extends Fragment implements FriendFinderRepository
         heroBackground.setCornerRadii(new float[]{28f, 28f, 28f, 28f, 0f, 0f, 0f, 0f});
         cardBinding.heroPanel.setBackground(heroBackground);
 
-        cardBinding.initialsText.setText(profile.getInitials());
+        if (TextUtils.isEmpty(profile.getPrimaryPhotoUrl())) {
+            cardBinding.heroImage.setVisibility(View.GONE);
+            cardBinding.initialsText.setVisibility(View.VISIBLE);
+            cardBinding.initialsText.setText(profile.getInitials());
+        } else {
+            cardBinding.heroImage.setVisibility(View.VISIBLE);
+            cardBinding.initialsText.setVisibility(View.GONE);
+            Glide.with(cardBinding.heroImage)
+                    .load(profile.getPrimaryPhotoUrl())
+                    .centerCrop()
+                    .into(cardBinding.heroImage);
+        }
+
         cardBinding.nameAgeText.setText(profile.getName() + ", " + profile.getAge());
         cardBinding.headlineText.setText(profile.getHeadline());
         cardBinding.metaText.setText(profile.getCity() + " - " + profile.getDistanceMiles() + " miles away - " + profile.getJobTitle());
@@ -180,7 +210,7 @@ public class DiscoverFragment extends Fragment implements FriendFinderRepository
                 translationX >= 0f ? R.string.discover_badge_like : R.string.discover_badge_pass
         );
         binding.currentCard.actionBadge.setBackgroundTintList(
-                android.content.res.ColorStateList.valueOf(
+                ColorStateList.valueOf(
                         getResources().getColor(
                                 translationX >= 0f ? R.color.success : R.color.error_red,
                                 requireContext().getTheme()
@@ -221,15 +251,34 @@ public class DiscoverFragment extends Fragment implements FriendFinderRepository
                 .withEndAction(() -> {
                     binding.currentCard.getRoot().setAlpha(1f);
                     if (like) {
-                        MatchThread matchThread = repository.likeProfile(swipedProfile.getId());
-                        if (matchThread != null) {
-                            showMatchDialog(swipedProfile.getName());
-                        }
+                        repository.likeProfile(swipedProfile.getId(), (matchThread, errorMessage) -> {
+                            if (binding == null) {
+                                return;
+                            }
+                            if (errorMessage != null) {
+                                Snackbar.make(binding.getRoot(), errorMessage, Snackbar.LENGTH_LONG).show();
+                                return;
+                            }
+                            if (matchThread != null) {
+                                showMatchDialog(swipedProfile.getName());
+                            }
+                        });
                     } else {
                         repository.passProfile(swipedProfile.getId());
                     }
                 })
                 .start();
+    }
+
+    private void showLockedState(String title, String body, String summary) {
+        currentProfile = null;
+        binding.deckSummary.setText(summary);
+        binding.emptyTitle.setText(title);
+        binding.emptyBody.setText(body);
+        binding.emptyContainer.setVisibility(View.VISIBLE);
+        binding.currentCard.getRoot().setVisibility(View.GONE);
+        binding.nextCard.getRoot().setVisibility(View.GONE);
+        binding.actionRow.setVisibility(View.GONE);
     }
 
     private void showMatchDialog(String name) {

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="supabase_url">REPLACE_WITH_SUPABASE_URL</string>
+    <string name="supabase_anon_key">REPLACE_WITH_SUPABASE_ANON_KEY</string>
+</resources>

@@ -1,6 +1,7 @@
 package com.alan.friendfindermobileapp.ui.matches;
 
 import android.graphics.drawable.GradientDrawable;
+import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,11 +10,13 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.alan.friendfindermobileapp.R;
 import com.alan.friendfindermobileapp.data.FriendFinderRepository;
 import com.alan.friendfindermobileapp.databinding.ItemMatchBinding;
 import com.alan.friendfindermobileapp.model.ChatMessage;
 import com.alan.friendfindermobileapp.model.DiscoveryProfile;
 import com.alan.friendfindermobileapp.model.MatchThread;
+import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,9 +62,9 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
 
         ChatMessage lastMessage = item.getLastMessage();
         holder.binding.matchPreview.setText(
-                lastMessage == null ? holder.binding.getRoot().getContext().getString(
-                        com.alan.friendfindermobileapp.R.string.match_item_new_match
-                ) : lastMessage.getText()
+                lastMessage == null
+                        ? holder.binding.getRoot().getContext().getString(R.string.match_item_new_match)
+                        : lastMessage.getText()
         );
         holder.binding.matchTime.setText(
                 DateUtils.getRelativeTimeSpanString(
@@ -72,6 +75,19 @@ public class MatchAdapter extends RecyclerView.Adapter<MatchAdapter.MatchViewHol
         );
         holder.binding.avatarInitials.setText(profile.getInitials());
         applyAvatar(holder.binding.avatarContainer, profile);
+
+        if (TextUtils.isEmpty(profile.getPrimaryPhotoUrl())) {
+            holder.binding.avatarImage.setVisibility(View.GONE);
+            holder.binding.avatarInitials.setVisibility(View.VISIBLE);
+        } else {
+            holder.binding.avatarImage.setVisibility(View.VISIBLE);
+            holder.binding.avatarInitials.setVisibility(View.GONE);
+            Glide.with(holder.binding.avatarImage)
+                    .load(profile.getPrimaryPhotoUrl())
+                    .centerCrop()
+                    .into(holder.binding.avatarImage);
+        }
+
         holder.binding.getRoot().setOnClickListener(view -> listener.onMatchClicked(item));
     }
 

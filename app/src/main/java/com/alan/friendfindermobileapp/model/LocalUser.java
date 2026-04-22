@@ -1,5 +1,7 @@
 package com.alan.friendfindermobileapp.model;
 
+import android.text.TextUtils;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -74,8 +76,28 @@ public class LocalUser {
         return interestsCsv;
     }
 
+    public List<String> getInterestsList() {
+        List<String> interests = new ArrayList<>();
+        if (TextUtils.isEmpty(interestsCsv)) {
+            return interests;
+        }
+
+        String[] parts = interestsCsv.split(",");
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                interests.add(trimmed);
+            }
+        }
+        return interests;
+    }
+
     public List<String> getPhotoUris() {
         return photoUris;
+    }
+
+    public String getPrimaryPhotoUri() {
+        return photoUris.isEmpty() ? "" : photoUris.get(0);
     }
 
     public JSONObject toJson() throws JSONException {

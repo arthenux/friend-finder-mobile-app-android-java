@@ -10,14 +10,20 @@ import java.util.List;
 
 public class MatchThread {
 
+    private final String id;
     private final String profileId;
     private final long matchedAtMillis;
     private final List<ChatMessage> messages;
 
-    public MatchThread(String profileId, long matchedAtMillis, List<ChatMessage> messages) {
+    public MatchThread(String id, String profileId, long matchedAtMillis, List<ChatMessage> messages) {
+        this.id = id;
         this.profileId = profileId;
         this.matchedAtMillis = matchedAtMillis;
         this.messages = new ArrayList<>(messages);
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getProfileId() {
@@ -32,8 +38,9 @@ public class MatchThread {
         return Collections.unmodifiableList(messages);
     }
 
-    public void addMessage(ChatMessage message) {
-        messages.add(message);
+    public void replaceMessages(List<ChatMessage> newMessages) {
+        messages.clear();
+        messages.addAll(newMessages);
     }
 
     public ChatMessage getLastMessage() {
@@ -45,6 +52,7 @@ public class MatchThread {
 
     public JSONObject toJson() throws JSONException {
         JSONObject object = new JSONObject();
+        object.put("id", id);
         object.put("profileId", profileId);
         object.put("matchedAtMillis", matchedAtMillis);
 
@@ -69,6 +77,7 @@ public class MatchThread {
         }
 
         return new MatchThread(
+                object.optString("id"),
                 object.optString("profileId"),
                 object.optLong("matchedAtMillis"),
                 restoredMessages
